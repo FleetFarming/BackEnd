@@ -6,6 +6,7 @@ let connection = mysql.createConnection({
   password: config.db_pwd,
   database: config.db_name,
   port: config.db_port,
+  multipleStatements: true,
 });
 
 connection.connect((err) => {
