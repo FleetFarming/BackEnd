@@ -8,6 +8,7 @@ const port = process.env.PORT || 5000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+
 // add cors
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -25,11 +26,16 @@ app.get('/api/getUsers', (req, res) => {
 
 app.post('/api/saveUser', (req, res) => {
   console.log("req.body", req.body);
-  const {firstName, lastName} = req.body
-  console.log(typeof(firstName), lastName)
-  let sql = `INSERT INTO useraccount(firstName, lastName)
-             VALUES (?,?)`
-  connection.query(sql, [firstName, lastName], (err, results) => {
+  const {username, password, firstName, lastName, street_name, zipcode, state} = req.body
+  //console.log(typeof(firstName), lastName)
+  let sql = "INSERT INTO `accounts` (`username`, `password`)\n" +
+  "VALUES(?, ?);\n" +
+  "INSERT INTO `addresses` (`street_name`, `zipcode`, `state`, `user_id`)\n" +
+  "VALUES(?, ?, ?, (SELECT user_id FROM accounts WHERE `username` = ?));\n" +
+  "INSERT INTO `profiledata` (`firstName`, `lastName`, `user_id`, `address_id`)\n" +
+  "VALUES(?, ?, (SELECT user_id FROM accounts WHERE `username` = ?),\n" +
+  "(SELECT address_id FROM addresses WHERE user_id = (SELECT user_id FROM accounts WHERE `username` = ?)));\n" 
+  connection.query(sql, [username, password, street_name, zipcode, state, username, firstName, lastName, username, username], (err, results) => {
     if (err) console.log(err);
     console.log(results);
   })
