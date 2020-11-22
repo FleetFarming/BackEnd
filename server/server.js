@@ -34,7 +34,7 @@ app.post("/api/getUserId", (req, res) => {
 });
 
 app.get("/api/getUserProfile/:userId", (req, res) => {
-  console.log("req parem", req.params)
+  console.log("req param", req.params)
   const {userId} = req.params
 
   const sql = `select * from (select acc.user_id, acc.email, prof.profile_id,
@@ -61,15 +61,24 @@ app.get("/api/getUserProfile/:userId", (req, res) => {
 
 app.post('/api/saveUser', (req, res) => {
   console.log("req.body", req.body);
-  const {email, password, firstName, lastName, city, street, zipCode, state, description} = req.body
+  const {email, password, firstName, lastName, lat, lng, city, street, zipCode, state, description} = req.body
   const profileName = `${firstName} ${lastName}`
+  let date_ob = new Date();
+  let date = ("0" + date_ob.getDate()).slice(-2);
+  let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
+  let year = date_ob.getFullYear();
+  let account_date = (year + "-" + month + "-" + date)
+
   let sql = "INSERT INTO `accounts` (`email`, `password`)\n" +
   "VALUES(?, ?);\n" +
-  "INSERT INTO `addresses` (`city`,`street_name`, `zipcode`, `state`, `user_id`)\n" +
-  "VALUES(?, ?, ?, ?, (SELECT user_id FROM accounts WHERE `email` = ?));\n" +
-  "INSERT INTO `profiledata` (`profile_name`,`firstName`, `lastName`, `description`, `user_id`, `address_id`)\n" +
-  "VALUES(?, ?, ?, ?, (SELECT user_id FROM accounts WHERE `email` = ?),\n" +
-  "(SELECT address_id FROM addresses WHERE user_id = (SELECT user_id FROM accounts WHERE `email` = ?)));\n"
+  "INSERT INTO `addresses` (`lat`, `lng`, `city`,`street_name`, `zipcode`, `state`, `user_id`)\n" +
+  "VALUES(?, ?, ?, ?, ?, ?, (SELECT user_id FROM accounts WHERE `email` = ?));\n" +
+  "INSERT INTO `farms` (`user_id`)\n" +
+  "VALUES((SELECT user_id FROM accounts WHERE `email` = ?));\n" +
+  "INSERT INTO `profiledata` (`account_date`, `profile_name`, `firstName`, `lastName`, `description`, `user_id`, `address_id`, `farm_id`)\n" +
+  "VALUES(?, ?, ?, ?, ?, (SELECT user_id FROM accounts WHERE `email` = ?),\n" +
+  "(SELECT address_id FROM addresses WHERE user_id = (SELECT user_id FROM accounts WHERE `email` = ?)),\n" +
+  "(SELECT farm_id FROM farms WHERE user_id = (SELECT user_id FROM accounts WHERE `email` = ?)));\n"
 
   connection.query("SELECT user_id FROM `accounts` WHERE email = ?", [email], (err, results) => {
     if (err) console.log(err);
@@ -78,7 +87,7 @@ app.post('/api/saveUser', (req, res) => {
       res.send({success: false, msg: "Email already existed"})
       return;
     } else {
-      connection.query(sql, [email, password, city, street, zipCode, state, email, profileName, firstName, lastName, description, email, email], (err, results) => {
+      connection.query(sql, [email, password, lat, lng, city, street, zipCode, state, email, email, account_date, profileName, firstName, lastName, description, email, email, email, email, email], (err, results) => {
         if (err) console.log(err);
         console.log(results);
         connection.query("select user_id from accounts where email = ?", [email], (err, results) => {
@@ -97,6 +106,32 @@ app.post('/api/saveUser', (req, res) => {
   })
 });
 // });
+
+app.get('/api/getMapData', (req, res) => {
+  let sql = `SELECT profiledata.firstName, profiledata.lastName, profiledata.description
+  ,profiledata.user_id, profiledata.profile_name, farms.farm_id, farms.farm_name, farms.start_date
+  ,farms.farm_type, addresses.lng, addresses.lat, addresses.street_name, addresses.city, 
+  addresses.zipcode, addresses.state
+  FROM profiledata, farms, addresses
+  WHERE profiledata.user_id = farms.farm_id AND addresses.address_id = profiledata.user_id` 
+
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.log("error: ", err);
+      res.status(500).send({
+        message: err.message || "Error Retreiving Data",
+      });
+    } else {
+      results.map(obj => {
+        obj.address = {street_name: obj.street_name, city: obj.city, state: obj.state,
+           zipcode: obj.zipcode}
+        return obj
+      })
+      console.log("results: ",results)
+      res.status(200).send(results);
+    }
+  });
+});
 
 app.listen(port, () => console.log(`Listening on port ${port}`));
 
