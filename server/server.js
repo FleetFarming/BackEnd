@@ -240,3 +240,5 @@ const sendConfirmation = function(email) {
 }
 
 //sendConfirmation('mlombard5333@gmail.com');
+
+

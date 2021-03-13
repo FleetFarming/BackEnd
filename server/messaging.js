@@ -9,7 +9,7 @@ module.exports = function(app) {
 
 
 app.post('/api/CreateMessage', (req, res) => {
-    var convo_id = null;//Used later if the message starts a new conversation
+    var convo_id = null; //Used later if the message starts a new conversation
     const {body, subject, conversation, recipient, sender_id} = req.body
     let date_ob = new Date();
     let date = ("0" + date_ob.getDate()).slice(-2);
@@ -59,7 +59,7 @@ app.post('/api/CreateMessage', (req, res) => {
     }
 })
 
-app.get('/api/getMessages:userID', (req, res) => {
+app.get('/api/getMessages/:userId', (req, res) => {
     console.log("req param", req.params)
     let {userId} = req.params
 
