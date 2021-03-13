@@ -4,9 +4,14 @@ const config = require("./config.js");
 const app = express();
 const { connection } = require("./db.js");
 const port = process.env.PORT || 5000;
+const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+require('./farm-layout')(app);
+require('./messaging')(app);
 
 
 // add cors
@@ -21,7 +26,7 @@ app.use((req, res, next) => {
 
 app.post("/api/getUserId", (req, res) => {
   let { email, password } = req.body;
-  let sql = "SELECT user_id FROM accounts WHERE email=? and password=?";
+  let sql = "SELECT user_id, confirmed FROM accounts WHERE email=? and password=?"
 
   connection.query(sql, [email, password], (err, results) => {
     if (err) {
@@ -29,7 +34,16 @@ app.post("/api/getUserId", (req, res) => {
       res.status(500).send({
         message: err.message || "Error Occured In Logging In",
       });
-    } else res.status(200).send(results);
+    } else {
+      let parsed = JSON.parse(JSON.stringify(results[0]))
+      if (parsed.confirmed == 0){
+        res.status(500).send({
+        message: results.message || "Please confirm email address before logging in"
+        });
+      } else {
+        res.status(200).send(results);
+      }
+    }
   });
 });
 
@@ -87,7 +101,8 @@ app.post('/api/saveUser', (req, res) => {
       res.send({success: false, msg: "Email already existed"})
       return;
     } else {
-      connection.query(sql, [email, password, lat, lng, city, street, zipCode, state, email, email, account_date, profileName, firstName, lastName, description, email, email, email, email, email], (err, results) => {
+      connection.query(sql, [email, password, lat, lng, city, street, zipCode, state, email, email, account_date, profileName, firstName,
+         lastName, description, email, email, email, email, email], (err, results) => {
         if (err) console.log(err);
         console.log(results);
         connection.query("select user_id from accounts where email = ?", [email], (err, results) => {
@@ -98,6 +113,7 @@ app.post('/api/saveUser', (req, res) => {
             });
           } else {
             console.log("results: ",results)
+            sendConfirmation(email)
             res.status(200).send({success: true, msg: "Registration Succeed!!", userId: results[0].user_id});
           }
         });
@@ -133,7 +149,94 @@ app.get('/api/getMapData', (req, res) => {
   });
 });
 
+app.get("/api/changeEmail/:userId", (req, res) => {
+  console.log("req param", req.params)
+  let {userId} = req.params
+  let {newEmail} = req.body
+
+  const sql = `UPDATE accounts
+  SET email = ?
+  WHERE user_id = ?`
+
+  connection.query(sql, [newEmail, userId], (err, results) => {
+    if (err) {
+      console.log("error: ", err);
+      res.status(500).send({
+        message: err.message || "Error Changing Email",
+      });
+    } else {
+      console.log("Email changed")
+      res.status(200).send(results);
+    }
+  });
+});
+
+app.get("/api/changeAddress/:userId", (req, res) => {
+  console.log("req param", req.params)
+  console.log("req body", req.body)
+  let {userId} = req.params
+  let {street_name, zipcode, state, city} = req.body
+
+  const sql = `UPDATE addresses
+  SET street_name = ?, zipcode = ?, state = ?, city = ?
+  WHERE user_id = ?`
+
+  connection.query(sql, [street_name, zipcode, state, city, userId], (err, results) => {
+    if (err) {
+      console.log("error: ", err);
+      res.status(500).send({
+        message: err.message || "Error Changing Address",
+      });
+    } else {
+      console.log("Address changed")
+      res.status(200).send(results);
+    }
+  });
+});
+
 app.listen(port, () => console.log(`Listening on port ${port}`));
 
 console.log("Process: ", config);
 // test();
+
+const sendConfirmation = function(email) {
+
+  const sql = "SELECT user_id FROM accounts WHERE email=?"
+  id = 0;
+  connection.query(sql, [email], (err, results) => {
+    if (err) {
+      console.log("error: ", err);
+    } else {
+      let parsed = JSON.parse(JSON.stringify(results[0]))
+      console.log(results)
+      id = parsed.user_id;
+      console.log("id", id)
+    }
+  })
+  console.log("id test", id)
+
+  // let transporter = nodemailer.createTransport({
+  //   service: 'gmail',
+  //   auth: {
+  //     user: 'fleetconfirm@gmail.com',
+  //     pass: process.env.email_password
+  //   }
+  // });
+
+  // let mailOptions = {
+  //   from: 'fleetconfirm@gmail.com',
+  //   to: email,
+  //   subject: 'FleetFarming Email Confirmation',
+  //   text: 'Please click this link to confirm your email'
+  // }
+
+  // transporter.sendMail(mailOptions, function(err, data) {
+  //   if (err) {
+  //     console.log('Error Occured');
+  //   } else {
+  //     console.log('Email sent');
+  //   }
+  // });
+}
+
+//sendConfirmation('mlombard5333@gmail.com');
