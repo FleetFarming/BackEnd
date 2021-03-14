@@ -20,14 +20,15 @@ app.post('/api/CreateMessage/:userId', (req, res) => {
     let conversationSql = "INSERT INTO `conversation` (`subject`, `sender_name`,\n" +
     "`recipient_name`) VALUES(?, (SELECT profile_name FROM profiledata WHERE user_id = ?), ?);"
     let newConvoSql = "INSERT INTO `messages` (`send_date`, `message`, `conversation_id`, `sender_id`,\n" +
-    "`recipient_id`) VALUES (?, ?, ?, ?, (SELECT user_id FROM profiledata WHERE profile_name = ?));"
+    "`recipient_id`, `recipient_name`, `sender_name`) VALUES (?, ?, ?, ?, (SELECT user_id FROM \n" +
+    "profiledata WHERE profile_name = ?), ?, (SELECT profile_name FROM profiledata WHERE user_id = ?));"
     let messageSql = "INSERT INTO `messages` (`send_date`, `message`, `conversation_id`, `sender_id`,\n" +
-    "`recipient_id`) VALUES (?, ?, (SELECT conversation_id FROM conversation WHERE (`subject` = ? AND \n" +
+    "`recipient_id`, `recipient_name`, `sender_name`) VALUES (?, ?, (SELECT conversation_id FROM conversation WHERE (`subject` = ? AND \n" +
     "recipient_name = ? AND sender_name = (SELECT profile_name FROM profiledata WHERE user_id = ?))), \n" +
-    "?, (SELECT user_id FROM profiledata WHERE profile_name = ?));"
+    "?, (SELECT user_id FROM profiledata WHERE profile_name = ?), ?, (SELECT profile_name FROM profiledata WHERE user_id = ?));"
 
     if (isNewConversation == 1) {
-        connection.query(conversationSql, [subject, userId, recipient], (err, results) => {
+        connection.query(conversationSql, [subject, userId, recipient,], (err, results) => {
             if (err) {
                 console.log("error: ", err);
                 res.status(500).send({
@@ -36,7 +37,7 @@ app.post('/api/CreateMessage/:userId', (req, res) => {
             } else {
                 convo_id = results.insertId;
                 console.log("results: ",results)
-                connection.query(newConvoSql, [message_date, body, convo_id, userId, recipient], (err, results) => {
+                connection.query(newConvoSql, [message_date, body, convo_id, userId, recipient, recipient, userId], (err, results) => {
                     if (err) {
                         console.log("Error: ", err);
                         res.status(500).send({
@@ -50,7 +51,7 @@ app.post('/api/CreateMessage/:userId', (req, res) => {
               }
         })
     } else {
-        connection.query(messageSql, [message_date, body, subject, recipient, userId, userId, recipient], (err, results) => {
+        connection.query(messageSql, [message_date, body, subject, recipient, userId, userId, recipient, recipient, userId], (err, results) => {
             if (err) {
                 console.log("Error: ", err);
                 res.status(500).send({
