@@ -68,9 +68,9 @@ app.get('/api/getMessages/:userId', (req, res) => {
     console.log("req param", req.params)
     let {userId} = req.params
 
-    let sql = "SELECT * FROM messages WHERE sender_id OR recipient_id = ?"
+    let sql = "SELECT * FROM messages WHERE (sender_id = ? OR recipient_id = ?)"
 
-    connection.query(sql, [userId], (err, results) => {
+    connection.query(sql, [userId, userId], (err, results) => {
         if (err) {
             console.log("Error: ", err);
             res.status(500).send({
