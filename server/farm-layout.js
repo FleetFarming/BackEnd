@@ -10,7 +10,7 @@ module.exports = function(app) {
     app.post("/api/createFarmObject/:userId", (req, res) => {
         let {userId} = req.params
         let input = req.body.data
-  
+        console.log("input: ", req.body)
         input =  input.map(obj => {
            let tmpArray = []
            tmpArray.push(userId)
@@ -19,13 +19,13 @@ module.exports = function(app) {
            }
            return tmpArray
         })
-  
-        console.log("input: ", input)
-  
-        let sql = "INSERT INTO farm_layout (farm_id, groupX, groupY, shapeX, shapeY, \n" +
-        "shapeType, shapeWidth, shapeHeight, shapeRotation, textX, textY, \n" +
-        "textRotation, textWidth, textHeight, radius) VALUES ?"
-  
+
+
+
+        let sql = "INSERT INTO farm_layout (farm_id, groupX, groupY, shapeType, shapeX, shapeY, shapeScaleX, shapeScaleY, \n" +
+        "shapeWidth, shapeHeight, shapeRotation, text, textX, textY, \n" +
+        "textRotation, textScaleX, textScaleY, radius) VALUES ?"
+
         connection.query(sql, [input], function (err, result) {
             if (err) {
                 console.log("error: ", err);

@@ -9,11 +9,6 @@ const jwt = require('jsonwebtoken');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-require('./farm-layout')(app);
-require('./messaging')(app);
-
-
 // add cors
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -23,6 +18,9 @@ app.use((req, res, next) => {
   );
   next();
 });
+
+require('./farm-layout')(app);
+require('./messaging')(app);
 
 app.post("/api/getUserId", (req, res) => {
   let { email, password } = req.body;
@@ -126,10 +124,10 @@ app.post('/api/saveUser', (req, res) => {
 app.get('/api/getMapData', (req, res) => {
   let sql = `SELECT profiledata.firstName, profiledata.lastName, profiledata.description
   ,profiledata.user_id, profiledata.profile_name, farms.farm_id, farms.farm_name, farms.start_date
-  ,farms.farm_type, addresses.lng, addresses.lat, addresses.street_name, addresses.city, 
+  ,farms.farm_type, addresses.lng, addresses.lat, addresses.street_name, addresses.city,
   addresses.zipcode, addresses.state
   FROM profiledata, farms, addresses
-  WHERE profiledata.user_id = farms.farm_id AND addresses.address_id = profiledata.user_id` 
+  WHERE profiledata.user_id = farms.farm_id AND addresses.address_id = profiledata.user_id`
 
   connection.query(sql, (err, results) => {
     if (err) {

@@ -21,42 +21,42 @@ app.post('/api/CreateMessage', (req, res) => {
     let messageSql = "INSERT INTO `messages` (`send_date`, `message`, `conversation_id`, `sender_id`,\n" +
     "`recipient_id`) VALUES (?, ?, ?, ?, (SELECT user_id FROM profiledata WHERE profile_name = ?));"
 
-    if (conversation == 0) {
-        connection.query(sql, [subject, sender_id, recipient], (err, results) => {
-            if (err) {
-                console.log("error: ", err);
-                res.status(500).send({
-                  message: err.message || "An error has occured ",
-                });
-            } else {
-                convo_id = results.insertId;
-                console.log("results: ",results)
-                connection.query(messageSql, [message_date, body, convo_id, sender_id, recipient], (err, results) => {
-                    if (err) {
-                        console.log("Error: ", err);
-                        res.status(500).send({
-                            message: err.message || "An error has occured",
-                        });
-                    } else {
-                        console.log("results: ", results)
-                        res.status(200).send(results);
-                    }
-                })
-              }
-        })
-    } else {
-        connection.query(messageSql, [message_date, body, conversation, sender_id, recipient], (err, results) => {
-            if (err) {
-                console.log("Error: ", err);
-                res.status(500).send({
-                    message: err.message || "An error has occured",
-                });
-            } else {
-                console.log("results: ", results)
-                res.status(200).send(results);
-            }
-        })
-    }
+    // if (conversation == 0) {
+    //     connection.query(sql, [subject, sender_id, recipient], (err, results) => {
+    //         if (err) {
+    //             console.log("error: ", err);
+    //             res.status(500).send({
+    //               message: err.message || "An error has occured ",
+    //             });
+    //         } else {
+    //             convo_id = results.insertId;
+    //             console.log("results: ",results)
+    //             connection.query(messageSql, [message_date, body, convo_id, sender_id, recipient], (err, results) => {
+    //                 if (err) {
+    //                     console.log("Error: ", err);
+    //                     res.status(500).send({
+    //                         message: err.message || "An error has occured",
+    //                     });
+    //                 } else {
+    //                     console.log("results: ", results)
+    //                     res.status(200).send(results);
+    //                 }
+    //             })
+    //           }
+    //     })
+    // } else {
+    //     connection.query(messageSql, [message_date, body, conversation, sender_id, recipient], (err, results) => {
+    //         if (err) {
+    //             console.log("Error: ", err);
+    //             res.status(500).send({
+    //                 message: err.message || "An error has occured",
+    //             });
+    //         } else {
+    //             console.log("results: ", results)
+    //             res.status(200).send(results);
+    //         }
+    //     })
+    // }
 })
 
 app.get('/api/getMessages/:userId', (req, res) => {
