@@ -6,9 +6,22 @@ const { connection } = require("./db.js");
 const port = process.env.PORT || 5000;
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
+const busboy = require('connect-busboy');
+const busboyBodyParser = require('busboy-body-parser');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+<<<<<<< HEAD
+=======
+app.use(busboy());
+app.use(busboyBodyParser());
+
+require('./farm-layout')(app);
+require('./messaging')(app);
+require('./photos')(app);
+
+
+>>>>>>> 0869e3c2c6b6b0c606b4ea092c81e468693e7ce2
 // add cors
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -76,6 +89,7 @@ app.post('/api/saveUser', (req, res) => {
   console.log("req.body", req.body);
   const {email, password, firstName, lastName, lat, lng, city, street, zipCode, state, description} = req.body
   const profileName = `${firstName} ${lastName}`
+  const defaultProfile = "https://fleetfarmingimages.s3.amazonaws.com/defaultprofile.jpg"
   let date_ob = new Date();
   let date = ("0" + date_ob.getDate()).slice(-2);
   let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
@@ -91,7 +105,8 @@ app.post('/api/saveUser', (req, res) => {
   "INSERT INTO `profiledata` (`account_date`, `profile_name`, `firstName`, `lastName`, `description`, `user_id`, `address_id`, `farm_id`)\n" +
   "VALUES(?, ?, ?, ?, ?, (SELECT user_id FROM accounts WHERE `email` = ?),\n" +
   "(SELECT address_id FROM addresses WHERE user_id = (SELECT user_id FROM accounts WHERE `email` = ?)),\n" +
-  "(SELECT farm_id FROM farms WHERE user_id = (SELECT user_id FROM accounts WHERE `email` = ?)));\n"
+  "(SELECT farm_id FROM farms WHERE user_id = (SELECT user_id FROM accounts WHERE `email` = ?)));\n" +
+  "INSERT INTO `photos` (`user_id`, photo_url, is_profile_picture) VALUES((SELECT user_id FROM accounts WHERE `email` = ?), ?, ?)"
 
   connection.query("SELECT user_id FROM `accounts` WHERE email = ?", [email], (err, results) => {
     if (err) console.log(err);
@@ -101,7 +116,7 @@ app.post('/api/saveUser', (req, res) => {
       return;
     } else {
       connection.query(sql, [email, password, lat, lng, city, street, zipCode, state, email, email, account_date, profileName, firstName,
-         lastName, description, email, email, email, email, email], (err, results) => {
+         lastName, description, email, email, email, email, defaultProfile, 1], (err, results) => {
         if (err) console.log(err);
         console.log(results);
         connection.query("select user_id from accounts where email = ?", [email], (err, results) => {
