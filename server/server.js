@@ -11,8 +11,6 @@ const busboyBodyParser = require('busboy-body-parser');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-<<<<<<< HEAD
-=======
 app.use(busboy());
 app.use(busboyBodyParser());
 
@@ -21,7 +19,6 @@ require('./messaging')(app);
 require('./photos')(app);
 
 
->>>>>>> 0869e3c2c6b6b0c606b4ea092c81e468693e7ce2
 // add cors
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
