@@ -25,7 +25,7 @@ require('./messaging')(app);
 app.post("/api/getUserId", (req, res) => {
   let { email, password } = req.body;
   let sql = "SELECT user_id, confirmed FROM accounts WHERE email=? and password=?"
-
+  console.log("inside getUserId")
   connection.query(sql, [email, password], (err, results) => {
     if (err) {
       console.log("error: ", err);
@@ -33,14 +33,15 @@ app.post("/api/getUserId", (req, res) => {
         message: err.message || "Error Occured In Logging In",
       });
     } else {
+      console.log("result: ", results)
       let parsed = JSON.parse(JSON.stringify(results[0]))
-      if (parsed.confirmed == 0){
-        res.status(500).send({
-        message: results.message || "Please confirm email address before logging in"
-        });
-      } else {
+      // if (parsed.confirmed == 0){
+      //   res.status(500).send({
+      //   message: results.message || "Please confirm email address before logging in"
+      //   });
+      // } else {
         res.status(200).send(results);
-      }
+      // }
     }
   });
 });
