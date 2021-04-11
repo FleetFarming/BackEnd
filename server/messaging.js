@@ -65,7 +65,6 @@ app.post('/api/CreateMessage/:userId', (req, res) => {
 })
 
 app.get('/api/getMessages/:userId', (req, res) => {
-    console.log("req param", req.params)
     let {userId} = req.params
 
     let sql = "SELECT * FROM messages WHERE ((sender_id = ? OR recipient_id = ?) AND (deleted_by != ?))"

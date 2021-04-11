@@ -8,6 +8,8 @@ const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const busboy = require('connect-busboy');
 const busboyBodyParser = require('busboy-body-parser');
+const bcrypt = require('bcrypt');
+const saltRounds = 8;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -17,6 +19,7 @@ app.use(busboyBodyParser());
 require('./farm-layout')(app);
 require('./messaging')(app);
 require('./photos')(app);
+require('./confirmation')(app);
 
 
 // add cors
@@ -31,23 +34,23 @@ app.use((req, res, next) => {
 
 app.post("/api/getUserId", (req, res) => {
   let { email, password } = req.body;
-  let sql = "SELECT user_id, confirmed FROM accounts WHERE email=? and password=?"
+  let sql = "SELECT user_id, confirmed, password FROM accounts WHERE email=?"
 
-  connection.query(sql, [email, password], (err, results) => {
+  connection.query(sql, [email], (err, results) => {
     if (err) {
       console.log("error: ", err);
       res.status(500).send({
         message: err.message || "Error Occured In Logging In",
       });
     } else {
-      let parsed = JSON.parse(JSON.stringify(results[0]))
-      if (parsed.confirmed == 0){
-        res.status(500).send({
-        message: results.message || "Please confirm email address before logging in"
-        });
-      } else {
-        res.status(200).send(results);
-      }
+      bcrypt.compare(password, results[0].password, function(err, result) {
+        if (result == true) {
+          console.log(results)
+          res.status(200).send(results);
+        } else {
+          res.status(200).send("Incorrect Password")
+        }
+      })
     }
   });
 });
@@ -102,34 +105,35 @@ app.post('/api/saveUser', (req, res) => {
   "(SELECT farm_id FROM farms WHERE user_id = (SELECT user_id FROM accounts WHERE `email` = ?)));\n" +
   "INSERT INTO `photos` (`user_id`, photo_url, is_profile_picture) VALUES((SELECT user_id FROM accounts WHERE `email` = ?), ?, ?)"
 
-  connection.query("SELECT user_id FROM `accounts` WHERE email = ?", [email], (err, results) => {
-    if (err) console.log(err);
-    console.log("result: ", results)
-    if (results !== undefined && results.length > 0) {
-      res.send({success: false, msg: "Email already existed"})
-      return;
-    } else {
-      connection.query(sql, [email, password, lat, lng, city, street, zipCode, state, email, email, account_date, profileName, firstName,
-         lastName, description, email, email, email, email, defaultProfile, 1], (err, results) => {
-        if (err) console.log(err);
-        console.log(results);
-        connection.query("select user_id from accounts where email = ?", [email], (err, results) => {
-          if (err) {
-            console.log("error: ", err);
-            res.status(500).send({
-              message: err.message || "Error Occured In Registration",
-            });
-          } else {
-            console.log("results: ",results)
-            sendConfirmation(email)
-            res.status(200).send({success: true, msg: "Registration Succeed!!", userId: results[0].user_id});
-          }
-        });
-      })
-    }
-  })
-});
-// });
+  bcrypt.hash(password, saltRounds, function(err, hash) {
+    connection.query("SELECT user_id FROM `accounts` WHERE email = ?", [email], (err, results) => {
+      if (err) console.log(err);
+      console.log("result: ", results)
+      if (results !== undefined && results.length > 0) {
+        res.send({success: false, msg: "Email already existed"})
+        return;
+      } else {
+        connection.query(sql, [email, hash, lat, lng, city, street, zipCode, state, email, email, account_date, profileName, firstName,
+          lastName, description, email, email, email, email, defaultProfile, 1], (err, results) => {
+          if (err) console.log(err);
+          console.log(results);
+          connection.query("select user_id from accounts where email = ?", [email], (err, results) => {
+            if (err) {
+              console.log("error: ", err);
+              res.status(500).send({
+                message: err.message || "Error Occured In Registration",
+              });
+            } else {
+              console.log("results: ",results)
+              sendConfirmation(email)
+              res.status(200).send({success: true, msg: "Registration Succeed!!", userId: results[0].user_id});
+            }
+          });
+        })
+      }
+   })
+  });
+})
 
 app.get('/api/getMapData', (req, res) => {
   let sql = `SELECT profiledata.firstName, profiledata.lastName, profiledata.description
