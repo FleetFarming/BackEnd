@@ -83,6 +83,7 @@ app.post('/api/saveUser', (req, res) => {
   console.log("req.body", req.body);
   const {email, password, firstName, lastName, lat, lng, city, street, zipCode, state, description} = req.body
   const profileName = `${firstName} ${lastName}`
+  //Point to a picture of default profile picture in S3 to get assigned as every new users profile picture
   const defaultProfile = "https://fleetfarmingimages.s3.amazonaws.com/defaultprofile.jpg"
   let date_ob = new Date();
   let date = ("0" + date_ob.getDate()).slice(-2);

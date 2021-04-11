@@ -11,8 +11,7 @@ module.exports = function(app) {
 app.post('/api/CreateMessage/:userId', (req, res) => {
     var convo_id = null; //Used later if the message starts a new conversation
     let {userId} = req.params
-    const {body, subject, recipient, isNewConversation} = req.body
-    console.log("incoming message: ",  req.body)
+    const {body, subject, recipient, isNewConversation, conversationId, recipientId} = req.body
     let date_ob = new Date();
     let date = ("0" + date_ob.getDate()).slice(-2);
     let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
@@ -21,12 +20,11 @@ app.post('/api/CreateMessage/:userId', (req, res) => {
     let conversationSql = "INSERT INTO `conversation` (`subject`, `sender_name`,\n" +
     "`recipient_name`) VALUES(?, (SELECT profile_name FROM profiledata WHERE user_id = ?), ?);"
     let newConvoSql = "INSERT INTO `messages` (`send_date`, `message`, `conversation_id`, `sender_id`,\n" +
-    "`recipient_id`, `recipient_name`, `sender_name`, `subject`) VALUES (?, ?, ?, ?, (SELECT user_id FROM \n" +
-    "profiledata WHERE profile_name = ?), ?, (SELECT profile_name FROM profiledata WHERE user_id = ?), ?);"
+    "`recipient_id`, `recipient_name`, `sender_name`, `subject`) VALUES (?, ?, ?, ?, \n" +
+    "?, ?, (SELECT profile_name FROM profiledata WHERE user_id = ?), ?);"
     let messageSql = "INSERT INTO `messages` (`send_date`, `message`, `conversation_id`, `sender_id`,\n" +
-    "`recipient_id`, `recipient_name`, `sender_name`, `subject`) VALUES (?, ?, (SELECT conversation_id FROM conversation WHERE (`subject` = ? AND \n" +
-    "recipient_name = ? AND sender_name = (SELECT profile_name FROM profiledata WHERE user_id = ?))), \n" +
-    "?, (SELECT user_id FROM profiledata WHERE profile_name = ?), ?, (SELECT profile_name FROM profiledata WHERE user_id = ?), ?);"
+    "`recipient_id`, `recipient_name`, `sender_name`, `subject`) VALUES (?, ?, ?, \n" +
+    "?, ?, ?, (SELECT profile_name FROM profiledata WHERE user_id = ?), ?);"
 
     if (isNewConversation === true) {
         connection.query(conversationSql, [subject, userId, recipient], (err, results) => {
@@ -37,8 +35,8 @@ app.post('/api/CreateMessage/:userId', (req, res) => {
                 });
             } else {
                 convo_id = results.insertId;
-                console.log("results: ",results)
-                connection.query(newConvoSql, [message_date, body, convo_id, userId, recipient, recipient, userId, subject], (err, results) => {
+                console.log("results: ", results)
+                connection.query(newConvoSql, [message_date, body, convo_id, userId, recipientId, recipient, userId, subject], (err, results) => {
                     if (err) {
                         console.log("Error: ", err);
                         res.status(500).send({
@@ -52,7 +50,7 @@ app.post('/api/CreateMessage/:userId', (req, res) => {
               }
         })
     } else {
-        connection.query(messageSql, [message_date, body, subject, recipient, userId, userId, recipient, recipient, userId, subject], (err, results) => {
+        connection.query(messageSql, [message_date, body, conversationId, userId, recipientId, recipient, userId, subject], (err, results) => {
             if (err) {
                 console.log("Error: ", err);
                 res.status(500).send({
@@ -70,9 +68,9 @@ app.get('/api/getMessages/:userId', (req, res) => {
     console.log("req param", req.params)
     let {userId} = req.params
 
-    let sql = "SELECT * FROM messages WHERE (sender_id = ? OR recipient_id = ?)"
+    let sql = "SELECT * FROM messages WHERE ((sender_id = ? OR recipient_id = ?) AND (deleted_by != ?))"
 
-    connection.query(sql, [userId, userId], (err, results) => {
+    connection.query(sql, [userId, userId, userId], (err, results) => {
         if (err) {
             console.log("Error: ", err);
             res.status(500).send({
@@ -81,6 +79,47 @@ app.get('/api/getMessages/:userId', (req, res) => {
         } else {
             console.log("results: ", results)
             res.status(200).send(results);
+        }
+    })
+})
+
+app.post('/api/deleteMessage/:userId', (req, res) => {
+    let {userId} = req.params
+    let {messageId} = req.body
+    sqlCheck = "SELECT * FROM `messages` WHERE (message_id = ?)"
+    deleteOneSql = "UPDATE `messages` SET deleted_by = ? WHERE (message_id = ?)"
+    removeMessageSql = "DELETE FROM `messages` WHERE (message_id = ?)"
+
+    connection.query(sqlCheck, [messageId], (err, results) => {
+        if (err) {
+            console.log("Error: ", err);
+            res.status(500).send({
+                message: err.message || "An error has occured",
+            });
+        } if (results[0].deleted_by == null) {
+            connection.query(deleteOneSql, [userId, messageId], (err, results) => {
+                if (err) {
+                    console.log("Error: ", err);
+                    res.status(500).send({
+                        message: err.message || "An error has occured",
+                    });
+                } else {
+                    console.log("results: ", results)
+                    res.status(200).send(results);
+                }
+            })
+        } else {
+            connection.query(removeMessageSql, [messageId], (err, results) => {
+                if (err) {
+                    console.log("Error: ", err);
+                    res.status(500).send({
+                        message: err.message || "An error has occured",
+                    });
+                } else {
+                    console.log("results: ", results)
+                    res.status(200).send(results);
+                }
+            })
         }
     })
 })
