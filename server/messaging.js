@@ -27,6 +27,7 @@ app.post('/api/CreateMessage/:userId', (req, res) => {
     "?, ?, ?, (SELECT profile_name FROM profiledata WHERE user_id = ?), ?);"
 
     if (isNewConversation === true) {
+        console.log("conversation is new: ", isNewConversation);
         connection.query(conversationSql, [subject, userId, recipient], (err, results) => {
             if (err) {
                 console.log("error: ", err);
@@ -50,6 +51,7 @@ app.post('/api/CreateMessage/:userId', (req, res) => {
               }
         })
     } else {
+        console.log("conversation is not new")
         connection.query(messageSql, [message_date, body, conversationId, userId, recipientId, recipient, userId, subject], (err, results) => {
             if (err) {
                 console.log("Error: ", err);
