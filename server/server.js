@@ -13,12 +13,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(busboy());
 app.use(busboyBodyParser());
-
-require('./farm-layout')(app);
-require('./messaging')(app);
-require('./photos')(app);
-
-
 // add cors
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -29,6 +23,9 @@ app.use((req, res, next) => {
   next();
 });
 
+require('./farm-layout')(app);
+require('./messaging')(app);
+require('./photos')(app);
 require('./farm-layout')(app);
 require('./messaging')(app);
 
