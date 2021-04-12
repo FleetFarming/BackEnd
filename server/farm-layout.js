@@ -55,4 +55,21 @@ app.get('/api/getFarmLayout/:userID', (req, res) => {
         }
     })
 })
+
+app.post('/api/deleteLayout/:userID', (req, res) => {
+    let {userId} = req.params
+    let sql = "DELETE * FROM farm_layout WHERE farm_id = ?"
+    
+    connection.query(sql, [userId], (err, results) => {
+        if (err) {
+            console.log("error: ", err);
+                res.status(500).send({
+                  message: err.message || "An error has occured ",
+                });
+        } else {
+            console.log(results)
+            res.status(200).send(results);
+        }
+    })
+})
 }
