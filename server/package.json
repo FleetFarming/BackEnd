@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "aws-sdk": "^2.881.0",
+    "bcrypt": "^5.0.1",
     "body-parser": "^1.18.3",
     "busboy": "^0.3.1",
     "busboy-body-parser": "^0.3.2",
