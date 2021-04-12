@@ -59,7 +59,7 @@ app.get('/api/getFarmLayout/:userID', (req, res) => {
 app.post('/api/deleteLayout/:userID', (req, res) => {
     let {userId} = req.params
     let sql = "DELETE * FROM farm_layout WHERE farm_id = ?"
-    
+
     connection.query(sql, [userId], (err, results) => {
         if (err) {
             console.log("error: ", err);
